@@ -101,6 +101,19 @@ function buildPoppers(count) {
   }));
 }
 
+function buildWelcomeTulips(count) {
+  const options = ["🌷", "💐", "🌸"];
+  return Array.from({ length: count }, (_, index) => ({
+    id: index,
+    left: randomRange(0, 100),
+    delay: randomRange(0, 4),
+    duration: randomRange(7, 14),
+    size: randomRange(20, 54),
+    sway: randomRange(-55, 55),
+    icon: options[index % options.length]
+  }));
+}
+
 export default function App() {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
@@ -117,6 +130,8 @@ export default function App() {
   const [effectSeed, setEffectSeed] = useState(0);
 
   const [page, setPage] = useState("surprise");
+  const [showAngelNote, setShowAngelNote] = useState(false);
+  const [showTulipPhoto, setShowTulipPhoto] = useState(false);
   const [placeName, setPlaceName] = useState("");
   const [memoryText, setMemoryText] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
@@ -134,6 +149,7 @@ export default function App() {
   const magicButterflies = useMemo(() => buildMagicButterflies(18), [effectSeed]);
   const magicGlitters = useMemo(() => buildGlitters(48), [effectSeed]);
   const tulipBouquets = useMemo(() => buildTulipBouquets(36), [effectSeed]);
+  const welcomeTulips = useMemo(() => buildWelcomeTulips(42), []);
 
   const scrapbookPages = useMemo(() => {
     const memoryPages = entries.map((entry) => ({ ...entry, type: "memory" }));
@@ -188,6 +204,16 @@ export default function App() {
       setScrapbookIndex(Math.max(0, scrapbookPages.length - 1));
     }
   }, [scrapbookIndex, scrapbookPages.length]);
+
+  useEffect(() => {
+    if (!unlocked || page !== "angel-intro") return undefined;
+
+    setShowAngelNote(true);
+    setShowTulipPhoto(false);
+
+    const photoTimer = setTimeout(() => setShowTulipPhoto(true), 2400);
+    return () => clearTimeout(photoTimer);
+  }, [page, unlocked]);
 
   useEffect(() => {
     return () => {
@@ -289,6 +315,8 @@ export default function App() {
     setEffectSeed(0);
 
     setPage("surprise");
+    setShowAngelNote(false);
+    setShowTulipPhoto(false);
     setPlaceName("");
     setMemoryText("");
     setPhotoUrl("");
@@ -302,6 +330,9 @@ export default function App() {
     event.preventDefault();
     if (user === AUTH.username && pass === AUTH.password) {
       setUnlocked(true);
+      setPage("angel-intro");
+      setShowAngelNote(false);
+      setShowTulipPhoto(false);
       setError("");
       initAudio();
       return;
@@ -503,6 +534,53 @@ export default function App() {
               <span>Page {scrapbookIndex + 1} / {scrapbookPages.length}</span>
               <button className="nav-btn" type="button" onClick={() => turnTo(scrapbookIndex + 1)} disabled={scrapbookIndex === scrapbookPages.length - 1}>Next Page</button>
             </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (page === "angel-intro") {
+    return (
+      <main className="app-shell angel-view">
+        <div className="angel-glow angel-glow-a" />
+        <div className="angel-glow angel-glow-b" />
+
+        {welcomeTulips.map((tulip) => (
+          <span
+            key={tulip.id}
+            className="welcome-tulip"
+            style={{
+              left: `${tulip.left}%`,
+              animationDelay: `${tulip.delay}s`,
+              animationDuration: `${tulip.duration}s`,
+              fontSize: `${tulip.size}px`,
+              "--sway": `${tulip.sway}px`
+            }}
+          >
+            {tulip.icon}
+          </span>
+        ))}
+
+        <section className="angel-stage">
+          <p className="angel-kicker">A tiny page just for you</p>
+
+          <div className={`angel-note ${showAngelNote ? "show" : ""}`}>
+            <span className="angel-note-seal">🌷</span>
+            <p>
+              You are an angel that fell from the sky, and angels are not allowed
+              to be sad.
+            </p>
+          </div>
+
+          <div className={`tulip-photo-card ${showTulipPhoto ? "show" : ""}`}>
+            <img
+              src="https://images.pexels.com/photos/36729/tulip-flower-bloom-pink.jpg?auto=compress&cs=tinysrgb&w=1200"
+              alt="Pink tulip in bloom"
+            />
+            <button className="celebrate-btn angel-continue-btn" type="button" onClick={() => setPage("surprise")}>
+              Next Page
+            </button>
           </div>
         </section>
       </main>
